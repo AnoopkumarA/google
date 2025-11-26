@@ -2,6 +2,8 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "env": {
-    "SKIP_ENV_VALIDATION": "true"
-  }
+    "SKIP_ENV_VALIDATION": "true",
+    "npm_config_build_from_source": "false"
+  },
+  "installCommand": "npm install --ignore-scripts"
 }
