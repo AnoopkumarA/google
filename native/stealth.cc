@@ -1,6 +1,8 @@
 #include <napi.h>
-#include <windows.h>
 #include <cstring>
+
+#ifdef _WIN32
+#include <windows.h>
 
 // Windows API constant for excluding window from screen capture
 #define WDA_EXCLUDEFROMCAPTURE 0x11
@@ -62,6 +64,17 @@ Napi::Value SetWindowStealth(const Napi::CallbackInfo& info) {
     throw Napi::Error::New(env, "Unknown error in setWindowStealth");
   }
 }
+
+#else
+
+// Stub implementation for non-Windows platforms
+Napi::Value SetWindowStealth(const Napi::CallbackInfo& info) {
+  Napi::Env env = info.Env();
+  // Return false on non-Windows platforms since this feature is Windows-only
+  return Napi::Boolean::New(env, false);
+}
+
+#endif
 
 // Initialize the native module
 Napi::Object Init(Napi::Env env, Napi::Object exports) {

@@ -9,21 +9,25 @@
       "dependencies": [
         "<!(node -p \"require('node-addon-api').gyp\")"
       ],
-      "cflags_cc!": ["-fno-exceptions"],
-      "cflags!": ["-fno-exceptions"],
-      "xcode_settings": {
-        "GCC_ENABLE_CPP_EXCEPTIONS": "YES",
-        "CLANG_CXX_LANGUAGE_DIALECT": "c++14",
-        "CLANG_CXX_LIBRARY": "libc++"
-      },
       "conditions": [
         ["OS=='win'", {
           "libraries": ["user32.lib", "kernel32.lib"],
+          "cflags_cc!": ["-fno-exceptions"],
+          "cflags!": ["-fno-exceptions"],
           "msvs_settings": {
             "VCCLCompilerTool": {
               "ExceptionHandling": 1,
               "AdditionalOptions": ["/std:c++17", "/EHsc"]
             }
+          }
+        }],
+        ["OS=='mac'", {
+          "cflags_cc!": ["-fno-exceptions"],
+          "cflags!": ["-fno-exceptions"],
+          "xcode_settings": {
+            "GCC_ENABLE_CPP_EXCEPTIONS": "YES",
+            "CLANG_CXX_LANGUAGE_DIALECT": "c++14",
+            "CLANG_CXX_LIBRARY": "libc++"
           }
         }]
       ]
