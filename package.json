@@ -31,7 +31,7 @@
     "install:native": "node-gyp rebuild",
     "electron:dev": "concurrently \"cross-env BROWSER=none npm start\" \"wait-on http://localhost:3000 && electron .\"",
     "electron:build": "npm run install:native && npm run build && electron-builder",
-    "postinstall": "node-gyp rebuild"
+    "postinstall": "node -e \"if (process.platform === 'win32') { require('child_process').execSync('node-gyp rebuild', { stdio: 'inherit' }) }\""
   },
   "build": {
     "appId": "com.interview.copilot",
