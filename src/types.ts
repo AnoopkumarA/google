@@ -39,6 +39,9 @@ export interface ElectronAPI {
   toggleStealthMode: (enable: boolean) => Promise<boolean>;
   isStealthSupported: () => Promise<boolean>;
   resizeWindow: (width: number, height: number) => Promise<void>;
+  captureScreen: () => Promise<string>;
+  writeToClipboard: (text: string) => void;
+  onTriggerAnalysis: (callback: () => void) => void;
   env?: {
     API_KEY?: string;
   };

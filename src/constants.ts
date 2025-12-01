@@ -66,17 +66,29 @@ export const ICONS = {
     )
   ),
   Ghost: () => (
-     React.createElement("svg", { xmlns: "http://www.w3.org/2000/svg", width: "20", height: "20", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" },
-        React.createElement("path", { d: "M9 19v-6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2Z" }),
-        React.createElement("path", { d: "M19 19v-6a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2Z" }),
-        React.createElement("path", { d: "M12 3a5 5 0 0 0-5 5v2a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V8a5 5 0 0 0-5-5Z" })
-     )
+    React.createElement("svg", { xmlns: "http://www.w3.org/2000/svg", width: "20", height: "20", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" },
+      React.createElement("path", { d: "M9 19v-6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2Z" }),
+      React.createElement("path", { d: "M19 19v-6a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2Z" }),
+      React.createElement("path", { d: "M12 3a5 5 0 0 0-5 5v2a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V8a5 5 0 0 0-5-5Z" })
+    )
   ),
   ExternalLink: () => (
-      React.createElement("svg", { xmlns: "http://www.w3.org/2000/svg", width: "20", height: "20", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" },
-        React.createElement("path", { d: "M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" }),
-        React.createElement("polyline", { points: "15 3 21 3 21 9" }),
-        React.createElement("line", { x1: "10", y1: "14", x2: "21", y2: "3" })
-      )
+    React.createElement("svg", { xmlns: "http://www.w3.org/2000/svg", width: "20", height: "20", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" },
+      React.createElement("path", { d: "M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" }),
+      React.createElement("polyline", { points: "15 3 21 3 21 9" }),
+      React.createElement("line", { x1: "10", y1: "14", x2: "21", y2: "3" })
+    )
+  ),
+  Lock: () => (
+    React.createElement("svg", { xmlns: "http://www.w3.org/2000/svg", width: "16", height: "16", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" },
+      React.createElement("rect", { x: "3", y: "11", width: "18", height: "11", rx: "2", ry: "2" }),
+      React.createElement("path", { d: "M7 11V7a5 5 0 0 1 10 0v4" })
+    )
+  ),
+  Search: () => (
+    React.createElement("svg", { xmlns: "http://www.w3.org/2000/svg", width: "16", height: "16", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" },
+      React.createElement("circle", { cx: "11", cy: "11", r: "8" }),
+      React.createElement("line", { x1: "21", y1: "21", x2: "16.65", y2: "16.65" })
+    )
   )
 };

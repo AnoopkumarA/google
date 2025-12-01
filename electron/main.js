@@ -1,4 +1,5 @@
-const { app, BrowserWindow, ipcMain, session, desktopCapturer } = require('electron');
+
+const { app, BrowserWindow, ipcMain, session, desktopCapturer, globalShortcut } = require('electron');
 const path = require('path');
 
 // Fix for black screen / blank window during getDisplayMedia (screen capture)
@@ -34,8 +35,8 @@ function createWindow() {
   });
 
   const isDev = !app.isPackaged;
-  const startUrl = isDev 
-    ? 'http://localhost:3000' 
+  const startUrl = isDev
+    ? 'http://localhost:3000'
     : `file://${path.join(__dirname, '../dist/index.html')}`;
 
   mainWindow.loadURL(startUrl);
@@ -51,6 +52,14 @@ function createWindow() {
 
 app.on('ready', () => {
   createWindow();
+
+  // Register Global Shortcut for Analyze Screen
+  globalShortcut.register('Ctrl+Shift+A', () => {
+    if (mainWindow) {
+      mainWindow.webContents.send('trigger-screen-analysis');
+      mainWindow.show(); // Ensure window is visible to show result
+    }
+  });
 
   // Handle getDisplayMedia requests
   session.defaultSession.setDisplayMediaRequestHandler((request, callback) => {
@@ -83,6 +92,10 @@ app.on('activate', function () {
   }
 });
 
+app.on('will-quit', () => {
+  globalShortcut.unregisterAll();
+});
+
 // IPC Handlers
 ipcMain.handle('resize-window', async (event, width, height) => {
   if (mainWindow) {
@@ -92,12 +105,12 @@ ipcMain.handle('resize-window', async (event, width, height) => {
 
 ipcMain.handle('toggle-stealth-mode', async (event, enable) => {
   if (!mainWindow) return false;
-  
+
   try {
     const stealthPath = path.resolve(__dirname, '../build/Release/stealth.node');
     delete require.cache[require.resolve(stealthPath)];
     const stealthAddon = require(stealthPath);
-    
+
     const buffer = mainWindow.getNativeWindowHandle();
     const success = stealthAddon.setWindowStealth(buffer, enable);
     return success;
@@ -106,5 +119,24 @@ ipcMain.handle('toggle-stealth-mode', async (event, enable) => {
     console.error("Native stealth failed:", e);
     mainWindow.setContentProtection(enable);
     return true;
+  }
+});
+
+// Screen Capture Handler for Analysis
+ipcMain.handle('capture-screen', async () => {
+  try {
+    const sources = await desktopCapturer.getSources({
+      types: ['screen'],
+      thumbnailSize: { width: 1920, height: 1080 }
+    });
+
+    if (sources.length > 0) {
+      // Return the base64 image of the first screen (primary)
+      return sources[0].thumbnail.toDataURL();
+    }
+    throw new Error("No screen sources available");
+  } catch (error) {
+    console.error("Screen capture failed:", error);
+    throw error;
   }
 });

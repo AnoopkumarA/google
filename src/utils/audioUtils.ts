@@ -11,18 +11,18 @@ export function downsampleBuffer(buffer: Float32Array, inputSampleRate: number, 
   const sampleRateRatio = inputSampleRate / outputSampleRate;
   const newLength = Math.round(buffer.length / sampleRateRatio);
   const result = new Float32Array(newLength);
-  
+
   for (let i = 0; i < newLength; i++) {
     const index = i * sampleRateRatio;
     const intIndex = Math.floor(index);
     const frac = index - intIndex;
-    
+
     // Linear interpolation for smoother sound
     const s0 = buffer[intIndex];
     const s1 = buffer[intIndex + 1] || s0;
     result[i] = s0 + (s1 - s0) * frac;
   }
-  
+
   return result;
 }
 
@@ -36,21 +36,21 @@ export function createPcmBlob(data: Float32Array, sampleRate: number = 16000): B
     // Convert to PCM16 LE
     int16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
   }
-  
+
   const bytes = new Uint8Array(int16.buffer);
   const len = bytes.byteLength;
   let binary = '';
-  
+
   // Chunking prevents "Maximum call stack size exceeded" (RangeError)
   // and reduces garbage collection pressure compared to byte-by-byte string concatenation.
   const CHUNK_SIZE = 0x8000; // 32KB
-  
+
   for (let i = 0; i < len; i += CHUNK_SIZE) {
     const chunk = bytes.subarray(i, i + CHUNK_SIZE);
     // @ts-ignore: apply accepts TypedArray in modern JS runtimes
     binary += String.fromCharCode.apply(null, chunk);
   }
-  
+
   return {
     data: btoa(binary),
     mimeType: `audio/pcm;rate=${sampleRate}`,

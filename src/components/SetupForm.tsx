@@ -24,47 +24,118 @@ const SetupForm: React.FC<SetupFormProps> = ({ onComplete }) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Retrieve API Key consistently across the app
+    const API_KEY = process.env.REACT_APP_API_KEY || process.env.API_KEY || window.electron?.env?.API_KEY || '';
+
+    if (!API_KEY) {
+      alert("API Key is missing. Please create a .env file in the root directory with REACT_APP_API_KEY=your_key");
+      return;
+    }
+
     setIsAnalyzing(true);
-    
+
     try {
       const reader = new FileReader();
       reader.readAsDataURL(file);
-      
+
       reader.onload = async () => {
         try {
-            const base64Data = (reader.result as string).split(',')[1];
-            const mimeType = file.type || 'application/pdf';
-            
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
-            const response = await ai.models.generateContent({
-                model: 'gemini-2.5-flash',
+          const base64Data = (reader.result as string).split(',')[1];
+          // Simple mime type detection fallback
+          let mimeType = file.type;
+          if (!mimeType) {
+            const ext = file.name.split('.').pop()?.toLowerCase();
+            if (ext === 'pdf') mimeType = 'application/pdf';
+            else if (ext === 'txt') mimeType = 'text/plain';
+            else mimeType = 'application/pdf';
+          }
+
+          const ai = new GoogleGenAI({ apiKey: API_KEY });
+          const modelsToTry = [
+            'gemini-2.5-pro',
+            'gemini-2.0-flash-exp',
+            'gemini-1.5-flash',
+            'gemini-1.5-flash-001',
+            'gemini-1.5-flash-002',
+            'gemini-1.5-pro',
+            'gemini-1.5-pro-001',
+            'gemini-1.5-pro-002',
+            'gemini-1.0-pro'
+          ];
+          let extractedText = '';
+
+          for (const model of modelsToTry) {
+            try {
+              console.log(`Attempting PDF analysis with model: ${model}`);
+              const response = await ai.models.generateContent({
+                model,
                 contents: {
-                    parts: [
+                  parts: [
+                    {
+                      inlineData: {
+                        mimeType: mimeType,
+                        data: base64Data
+                      }
+                    },
+                    {
+                      text: "Extract the text from this resume. Format it into a clean, structured plain text representation. Use uppercase for section headers (e.g., EXPERIENCE, EDUCATION), use dashes (-) for bullet points, and ensure there is clear vertical spacing between sections. Do not include markdown code blocks or conversational filler."
+                    }
+                  ]
+                }
+              });
+
+              if (response.text) {
+                extractedText = response.text;
+                break; // Success!
+              }
+            } catch (error: any) {
+              console.warn(`Model ${model} failed:`, error.message);
+
+              if (error.status === 429 || error.code === 429 || error.message?.includes('429') || error.message?.includes('quota')) {
+                console.log(`Rate limit hit for ${model}. Retrying in 2 seconds...`);
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                try {
+                  const response = await ai.models.generateContent({
+                    model,
+                    contents: {
+                      parts: [
                         {
-                            inlineData: {
-                                mimeType: mimeType,
-                                data: base64Data
-                            }
+                          inlineData: {
+                            mimeType: mimeType,
+                            data: base64Data
+                          }
                         },
                         {
-                            text: "Extract the text from this resume. Format it into a clean, structured plain text representation. Use uppercase for section headers (e.g., EXPERIENCE, EDUCATION), use dashes (-) for bullet points, and ensure there is clear vertical spacing between sections. Do not include markdown code blocks or conversational filler."
+                          text: "Extract the text from this resume. Format it into a clean, structured plain text representation. Use uppercase for section headers (e.g., EXPERIENCE, EDUCATION), use dashes (-) for bullet points, and ensure there is clear vertical spacing between sections. Do not include markdown code blocks or conversational filler."
                         }
-                    ]
+                      ]
+                    }
+                  });
+                  if (response.text) {
+                    extractedText = response.text;
+                    break;
+                  }
+                } catch (retryError: any) {
+                  console.warn(`Retry failed for ${model}:`, retryError.message);
                 }
-            });
+              }
 
-            const extractedText = response.text;
-            if (extractedText) {
-                setForm(prev => ({ ...prev, resumeText: extractedText }));
+              if (model === modelsToTry[modelsToTry.length - 1]) throw error;
             }
+          }
+
+
+          if (extractedText) {
+            setForm(prev => ({ ...prev, resumeText: extractedText }));
+          }
         } catch (error) {
-            console.error("Error analyzing resume:", error);
-            alert("Failed to extract text. Please ensure the file is a valid PDF or text document.");
+          console.error("Error analyzing resume:", error);
+          alert("Failed to extract text. Please ensure the file is a valid PDF or text document.");
         } finally {
-            setIsAnalyzing(false);
+          setIsAnalyzing(false);
         }
       };
-      
+
       reader.onerror = () => {
         alert("Error reading file.");
         setIsAnalyzing(false);
@@ -89,6 +160,21 @@ const SetupForm: React.FC<SetupFormProps> = ({ onComplete }) => {
             Interview Copilot
           </h1>
           <p className="text-neutral-400 mt-2">Configure your assistant context</p>
+
+          {/* Mode Indicator */}
+          <div className="mt-4 flex justify-center">
+            {(window as any).electron ? (
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-green-500/10 border border-green-500/20 rounded-full">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <span className="text-xs font-semibold text-green-400">Electron Mode - Screen Capture Available</span>
+              </div>
+            ) : (
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-orange-500/10 border border-orange-500/20 rounded-full">
+                <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                <span className="text-xs font-semibold text-orange-400">Browser Mode - Screen Capture Unavailable</span>
+              </div>
+            )}
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -121,33 +207,33 @@ const SetupForm: React.FC<SetupFormProps> = ({ onComplete }) => {
 
           <div className="space-y-2">
             <div className="flex justify-between items-center">
-                <label className="text-sm font-medium text-neutral-300">Resume Summary</label>
-                <div className="relative">
-                    <input
-                        type="file"
-                        id="resume-upload"
-                        accept=".pdf,.txt,.rtf,.md,application/pdf,text/plain"
-                        className="hidden"
-                        onChange={handleFileUpload}
-                        disabled={isAnalyzing}
-                    />
-                    <label
-                        htmlFor="resume-upload"
-                        className={`text-xs px-3 py-1.5 rounded cursor-pointer transition-colors flex items-center gap-2 border border-white/5 ${isAnalyzing ? 'bg-neutral-800 text-neutral-500 cursor-not-allowed' : 'bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 hover:border-blue-500/30'}`}
-                    >
-                        {isAnalyzing ? (
-                            <>
-                                <span className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                                Extracting...
-                            </>
-                        ) : (
-                            <>
-                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                                Upload PDF/Text
-                            </>
-                        )}
-                    </label>
-                </div>
+              <label className="text-sm font-medium text-neutral-300">Resume Summary</label>
+              <div className="relative">
+                <input
+                  type="file"
+                  id="resume-upload"
+                  accept=".pdf,.txt,.rtf,.md,application/pdf,text/plain"
+                  className="hidden"
+                  onChange={handleFileUpload}
+                  disabled={isAnalyzing}
+                />
+                <label
+                  htmlFor="resume-upload"
+                  className={`text-xs px-3 py-1.5 rounded cursor-pointer transition-colors flex items-center gap-2 border border-white/5 ${isAnalyzing ? 'bg-neutral-800 text-neutral-500 cursor-not-allowed' : 'bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 hover:border-blue-500/30'}`}
+                >
+                  {isAnalyzing ? (
+                    <>
+                      <span className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                      Extracting...
+                    </>
+                  ) : (
+                    <>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
+                      Upload PDF/Text
+                    </>
+                  )}
+                </label>
+              </div>
             </div>
             <textarea
               name="resumeText"
